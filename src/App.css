@@ -1,0 +1,333 @@
+/* App-level layout — minimal, notebook page fills the viewport */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  border-bottom: 2px solid var(--ink);
+  padding: 12px 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+}
+
+.sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--rule);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-month {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px 10px;
+}
+
+.sidebar-day {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--ink-light);
+  transition: background 0.1s;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+}
+.sidebar-day:hover { background: rgba(0,0,0,0.04); }
+.sidebar-day.active {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.sidebar-badge {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+}
+.sidebar-day.active .sidebar-badge { color: rgba(255,255,255,0.55); }
+.sidebar-badge.badge-done { color: var(--priority-3); }
+.sidebar-day.active .sidebar-badge.badge-done { color: #7ecfa0; }
+
+.page-area {
+  flex: 1;
+  padding: 32px 48px;
+  max-width: 760px;
+}
+
+.readonly-notice {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: -20px 0 24px;
+}
+
+.page-date {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+
+.page-title {
+  font-size: 36px;
+  margin: 0 0 32px;
+  line-height: 1.1;
+}
+
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0 12px 0;
+  position: relative;
+}
+
+.task-label {
+  font-size: 16px;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* ── Delete button — revealed on hover ── */
+.task-delete {
+  opacity: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-faint);
+  padding: 0 4px;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.task-item:hover .task-delete {
+  opacity: 1;
+}
+.task-delete:hover {
+  color: var(--priority-1);
+}
+
+/* ── Add-task row ── */
+.task-add-row {
+  padding: 10px 0;
+}
+
+.add-task-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  transition: color 0.15s;
+}
+.add-task-btn:hover {
+  color: var(--ink-light);
+}
+.add-task-plus {
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 300;
+}
+
+.task-input {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--ink);
+  padding: 2px 0;
+  outline: none;
+}
+.task-input::placeholder { color: var(--ink-faint); }
+.task-input:focus { border-bottom-color: var(--ink-light); }
+
+.task-edit-input {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ── Carry-forward demo trigger in header ── */
+.cf-demo-btn {
+  margin-left: 16px;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-family: var(--font-serif);
+  font-size: 12px;
+  color: var(--ink-faint);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.cf-demo-btn:hover { color: var(--ink-light); border-color: var(--ink-light); }
+
+/* ── Modal backdrop + card ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.35);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 32px 36px;
+  width: 440px;
+  max-width: calc(100vw - 48px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+}
+
+.modal-eyebrow {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  margin: 0 0 6px;
+}
+
+.modal-title {
+  font-size: 24px;
+  margin: 0 0 6px;
+  line-height: 1.2;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--ink-light);
+  margin: 0 0 24px;
+}
+
+.modal-task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-task-label {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-btn-secondary {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--ink-light);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.modal-btn-secondary:hover { border-color: var(--ink-light); color: var(--ink); }
+.modal-btn-secondary:disabled { opacity: 0.5; cursor: default; }
+
+.modal-btn-primary {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--paper);
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.modal-btn-primary:hover { opacity: 0.85; }
+.modal-btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Progress bar in header ── */
+.header-progress {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-label,
+.progress-pct {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--ink-faint);
+  min-width: 28px;
+}
+
+.progress-track {
+  width: 120px;
+  height: 4px;
+  background: var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}

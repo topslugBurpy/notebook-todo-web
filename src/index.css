@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+/* ── Notebook design tokens ── */
+:root {
+  --paper: #fafaf7;
+  --ink: #1a1a1a;
+  --ink-light: #4a4a47;
+  --ink-faint: #9a9a97;
+  --rule: #d4d4c8;
+  --margin-line: #e8a090;
+  --priority-1: #c0392b;
+  --priority-2: #2980b9;
+  --priority-3: #27ae60;
+  --dot-color: #c8c8be;
+  --dot-spacing: 24px;
+
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: system-ui, -apple-system, sans-serif;
+}
+
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Dotted grid background ── */
+.notebook-grid {
+  background-color: var(--paper);
+  background-image: radial-gradient(circle, var(--dot-color) 1.2px, transparent 1.2px);
+  background-size: var(--dot-spacing) var(--dot-spacing);
+}
+
+/* ── Notebook page ── */
+.notebook-page {
+  position: relative;
+  background: var(--paper);
+  /* left margin red line */
+  border-left: 3px solid var(--margin-line);
+  padding-left: 48px;
+}
+
+/* ── Horizontal rules between tasks ── */
+.task-rule {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+}
+
+/* ── Priority button (interactive numeral) ── */
+.priority-btn {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.1s;
+  width: 32px;
+  text-align: center;
+}
+.priority-btn:hover { background: rgba(0,0,0,0.06); }
+.priority-btn.p1 { color: var(--priority-1); }
+.priority-btn.p2 { color: var(--priority-2); }
+.priority-btn.p3 { color: var(--priority-3); }
+.priority-btn.p-none { color: var(--rule); font-size: 22px; opacity: 0; }
+.task-item:hover .priority-btn.p-none { opacity: 1; }
+
+/* ── Priority popover ── */
+.priority-popover {
+  position: absolute;
+  left: -8px;
+  top: calc(50% + 18px);
+  z-index: 20;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+}
+.popover-opt {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
+  line-height: 1;
+}
+.popover-opt:hover { background: rgba(0,0,0,0.06); }
+.popover-opt.selected { background: rgba(0,0,0,0.08); }
+.popover-opt.p1 { color: var(--priority-1); }
+.popover-opt.p2 { color: var(--priority-2); }
+.popover-opt.p3 { color: var(--priority-3); }
+.popover-opt.p-clear { color: var(--ink-faint); font-size: 13px; padding-top: 6px; }
+
+/* ── Empty state ── */
+.empty-state {
+  padding: 40px 0 24px;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* ── Hand-drawn checkbox ── */
+.task-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink-light);
+  border-radius: 50%;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+.task-checkbox:checked {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.task-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+/* ── Strikethrough — slightly offset for hand-drawn feel ── */
+.task-done {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 1px;
+  text-decoration-skip-ink: none;
+}
+
+/* ── Typography ── */
+.heading-serif {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
