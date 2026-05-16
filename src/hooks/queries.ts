@@ -1,25 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  fetchToday,
-  fetchDayFeed,
-  fetchDay,
-  addTask,
-  updateTask,
-  deleteTask,
-  carryForward,
-} from '../api/client'
-import type { AddTaskRequest, CarryForwardRequest, UpdateTaskRequest } from '../types/api'
+import * as api from '../api/tasks'
 
 export const QUERY_KEYS = {
-  today: ['today'] as const,
-  dayFeed: ['dayFeed'] as const,
-  day: (date: string) => ['day', date] as const,
+  todayTasks: ['tasks', 'today'] as const,
+  yesterdayUnfinished: ['tasks', 'yesterday-unfinished'] as const,
+  sidebarDays: ['days', 'sidebar'] as const,
+  dayTasks: (date: string) => ['tasks', date] as const,
 }
 
 export function useTodayQuery() {
   return useQuery({
-    queryKey: QUERY_KEYS.today,
-    queryFn: fetchToday,
+    queryKey: QUERY_KEYS.todayTasks,
+    queryFn: api.getTodayTasks,
+    retry: false,
+    staleTime: 30_000,
+  })
+}
+
+export function useYesterdayUnfinishedQuery() {
+  return useQuery({
+    queryKey: QUERY_KEYS.yesterdayUnfinished,
+    queryFn: api.getYesterdayUnfinished,
     retry: false,
     staleTime: 30_000,
   })
@@ -27,8 +28,8 @@ export function useTodayQuery() {
 
 export function useDayFeedQuery() {
   return useQuery({
-    queryKey: QUERY_KEYS.dayFeed,
-    queryFn: fetchDayFeed,
+    queryKey: QUERY_KEYS.sidebarDays,
+    queryFn: api.getSidebarDays,
     retry: false,
     staleTime: 30_000,
   })
@@ -36,8 +37,8 @@ export function useDayFeedQuery() {
 
 export function useDayQuery(date: string, enabled = true) {
   return useQuery({
-    queryKey: QUERY_KEYS.day(date),
-    queryFn: () => fetchDay(date),
+    queryKey: QUERY_KEYS.dayTasks(date),
+    queryFn: () => api.getTasksByDate(date),
     retry: false,
     staleTime: 30_000,
     enabled,
@@ -47,10 +48,11 @@ export function useDayQuery(date: string, enabled = true) {
 export function useAddTaskMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: AddTaskRequest) => addTask(body),
+    mutationFn: ({ text, priority }: { text: string; priority?: 0 | 1 | 2 | 3 }) =>
+      api.createTask(text, priority),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.today })
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.dayFeed })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.todayTasks })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.sidebarDays })
     },
   })
 }
@@ -58,10 +60,22 @@ export function useAddTaskMutation() {
 export function useUpdateTaskMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: UpdateTaskRequest }) =>
-      updateTask(id, body),
+    mutationFn: ({ id, patch }: { id: string; patch: { text?: string; done?: boolean } }) =>
+      api.updateTask(id, patch),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.today })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.todayTasks })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.sidebarDays })
+    },
+  })
+}
+
+export function useSetPriorityMutation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ taskId, newPriority }: { taskId: string; newPriority: 0 | 1 | 2 | 3 }) =>
+      api.setPriority(taskId, newPriority),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.todayTasks })
     },
   })
 }
@@ -69,10 +83,10 @@ export function useUpdateTaskMutation() {
 export function useDeleteTaskMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => deleteTask(id),
+    mutationFn: (id: string) => api.deleteTask(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.today })
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.dayFeed })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.todayTasks })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.sidebarDays })
     },
   })
 }
@@ -80,10 +94,10 @@ export function useDeleteTaskMutation() {
 export function useCarryForwardMutation() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: CarryForwardRequest) => carryForward(body),
+    mutationFn: (taskIds: string[]) => api.carryForward(taskIds),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.today })
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.dayFeed })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.todayTasks })
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.sidebarDays })
     },
   })
 }

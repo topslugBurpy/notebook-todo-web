@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
     "@tanstack/react-query": "^5.100.10",
-    "axios": "^1.16.1",
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.1.0",
     "react": "^19.2.6",
