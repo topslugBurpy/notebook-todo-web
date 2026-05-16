@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Task } from '../types/api'
+import type { Task } from '../api/supabase'
 
 interface Props {
   tasks: Task[]

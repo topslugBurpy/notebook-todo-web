@@ -7,13 +7,16 @@ import {
   useTodayQuery,
   useDayFeedQuery,
   useDayQuery,
+  useYesterdayUnfinishedQuery,
   useAddTaskMutation,
   useUpdateTaskMutation,
+  useSetPriorityMutation,
   useDeleteTaskMutation,
   useCarryForwardMutation,
 } from './hooks/queries'
 import CarryForwardModal from './components/CarryForwardModal'
-import type { Task, Priority } from './types/api'
+import type { Task } from './api/supabase'
+import { shouldPromptCarryForward, dismissCarryPrompt } from './utils/carryPrompt'
 
 const PRIORITY_LABEL: Record<number, string> = { 1: '①', 2: '②', 3: '③' }
 const PRIORITY_CLASS: Record<number, string>  = { 1: 'p1', 2: 'p2', 3: 'p3' }
@@ -33,21 +36,21 @@ export default function App() {
   const addInputRef  = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
 
-  const { data: todayData, isLoading, isError } = useTodayQuery()
-  const { data: feedData }                       = useDayFeedQuery()
-  const addMutation                              = useAddTaskMutation()
-  const updateMutation                           = useUpdateTaskMutation()
-  const deleteMutation                           = useDeleteTaskMutation()
-  const carryForwardMutation                     = useCarryForwardMutation()
-
-  const todayDate = todayData?.day.date ?? format(new Date(), 'yyyy-MM-dd')
+  const todayDate = format(new Date(), 'yyyy-MM-dd')
   const isToday   = selectedDate === todayDate
 
-  const { data: pastDayData } = useDayQuery(selectedDate, !isToday)
+  const { data: todayData, isLoading, isError } = useTodayQuery()
+  const { data: yesterdayUnfinished }           = useYesterdayUnfinishedQuery()
+  const { data: feedData }                       = useDayFeedQuery()
+  const { data: pastDayData }                    = useDayQuery(selectedDate, !isToday)
 
-  const tasks: Task[] = isToday
-    ? (todayData?.day.tasks ?? [])
-    : (pastDayData?.tasks ?? [])
+  const addMutation         = useAddTaskMutation()
+  const updateMutation      = useUpdateTaskMutation()
+  const setPriorityMutation = useSetPriorityMutation()
+  const deleteMutation      = useDeleteTaskMutation()
+  const carryForwardMutation = useCarryForwardMutation()
+
+  const tasks: Task[] = isToday ? (todayData ?? []) : (pastDayData ?? [])
 
   const done  = tasks.filter(t => t.done).length
   const total = tasks.length
@@ -57,8 +60,10 @@ export default function App() {
   useEffect(() => { if (editingId !== null) editInputRef.current?.focus() }, [editingId])
 
   useEffect(() => {
-    if (todayData?.shouldPromptCarryForward) showCarryForward()
-  }, [todayData?.shouldPromptCarryForward, showCarryForward])
+    if ((yesterdayUnfinished ?? []).length > 0 && shouldPromptCarryForward(todayDate)) {
+      showCarryForward()
+    }
+  }, [yesterdayUnfinished, todayDate, showCarryForward])
 
   useEffect(() => {
     if (priorityPopover === null) return
@@ -74,7 +79,7 @@ export default function App() {
     } else if (!task.done && task.priority > 0) {
       confetti({ particleCount: 18, spread: 30, origin: { y: 0.55 }, colors: ['#1a1a1a'], ticks: 60 })
     }
-    updateMutation.mutate({ id: task.id, body: { done: !task.done } })
+    updateMutation.mutate({ id: task.id, patch: { done: !task.done } })
   }
 
   function deleteTask(id: string) {
@@ -99,22 +104,28 @@ export default function App() {
   function commitEdit() {
     const text = editText.trim()
     if (text && editingId) {
-      updateMutation.mutate({ id: editingId, body: { text } })
+      updateMutation.mutate({ id: editingId, patch: { text } })
     }
     setEditingId(null)
   }
 
-  function setPriority(id: string, priority: Priority) {
-    updateMutation.mutate({ id, body: { priority } })
+  function setPriority(id: string, priority: 0 | 1 | 2 | 3) {
+    setPriorityMutation.mutate({ taskId: id, newPriority: priority })
     setPriorityPopover(null)
   }
 
   function handleCarryForwardConfirm(taskIds: string[]) {
-    carryForwardMutation.mutate({ taskIds }, { onSuccess: hideCarryForward })
+    carryForwardMutation.mutate(taskIds, {
+      onSuccess: () => {
+        dismissCarryPrompt(todayDate)
+        hideCarryForward()
+      },
+    })
   }
 
   function handleCarryForwardDismiss() {
-    carryForwardMutation.mutate({ taskIds: [] }, { onSuccess: hideCarryForward })
+    dismissCarryPrompt(todayDate)
+    hideCarryForward()
   }
 
   if (isLoading) {
@@ -129,7 +140,7 @@ export default function App() {
     return (
       <div className="app-shell notebook-grid" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ fontFamily: 'var(--font-serif)', color: 'var(--priority-1)', fontSize: 16 }}>
-          Could not reach the backend. Is it running on port 8080?
+          Could not load tasks. Check your Supabase connection.
         </span>
       </div>
     )
@@ -149,7 +160,7 @@ export default function App() {
           </div>
           <span className="progress-pct">{pct}%</span>
         </div>
-        {(todayData?.yesterdayUnfinishedTasks ?? []).length > 0 && (
+        {(yesterdayUnfinished ?? []).length > 0 && (
           <button className="cf-demo-btn" onClick={showCarryForward} title="Carry forward from yesterday">
             ↩ carry forward
           </button>
@@ -311,7 +322,7 @@ export default function App() {
 
       {carryForwardVisible && (
         <CarryForwardModal
-          tasks={todayData?.yesterdayUnfinishedTasks ?? []}
+          tasks={yesterdayUnfinished ?? []}
           onConfirm={handleCarryForwardConfirm}
           onDismiss={handleCarryForwardDismiss}
           isPending={carryForwardMutation.isPending}
