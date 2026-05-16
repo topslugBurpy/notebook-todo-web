@@ -5,22 +5,15 @@ const todayStr = () => new Date().toISOString().slice(0, 10)
 const dayOfWeek = (dateStr: string) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })
 
-// priority 0 = unprioritized → sorts to bottom; 1/2/3 → top in that order
-const sortTasks = (tasks: Task[]): Task[] =>
-  tasks.sort((a, b) => {
-    const pa = a.priority === 0 ? Infinity : a.priority
-    const pb = b.priority === 0 ? Infinity : b.priority
-    if (pa !== pb) return pa - pb
-    return a.created_at.localeCompare(b.created_at)
-  })
-
 export async function getTodayTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
     .eq('date', todayStr())
+    .order('priority', { ascending: true })
+    .order('created_at', { ascending: true })
   if (error) throw error
-  return sortTasks((data as Task[]) ?? [])
+  return (data as Task[]) ?? []
 }
 
 export async function getTasksByDate(date: string): Promise<Task[]> {
@@ -28,8 +21,10 @@ export async function getTasksByDate(date: string): Promise<Task[]> {
     .from('tasks')
     .select('*')
     .eq('date', date)
+    .order('priority', { ascending: true })
+    .order('created_at', { ascending: true })
   if (error) throw error
-  return sortTasks((data as Task[]) ?? [])
+  return (data as Task[]) ?? []
 }
 
 export async function getYesterdayUnfinished(): Promise<Task[]> {
