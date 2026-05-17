@@ -2,6 +2,13 @@ import { supabase } from './supabase'
 import type { Task, DaySummary } from './supabase'
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
+
+async function currentUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser()
+  if (error) throw error
+  if (!data.user) throw new Error('Not authenticated')
+  return data.user.id
+}
 const dayOfWeek = (dateStr: string) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })
 
@@ -70,9 +77,10 @@ export async function getSidebarDays(): Promise<DaySummary[]> {
 }
 
 export async function createTask(text: string, priority: 0 | 1 | 2 | 3 = 0): Promise<Task> {
+  const userId = await currentUserId()
   const { data, error } = await supabase
     .from('tasks')
-    .insert({ date: todayStr(), text, priority })
+    .insert({ date: todayStr(), text, priority, user_id: userId })
     .select()
     .single()
   if (error) throw error
@@ -112,6 +120,7 @@ export async function deleteTask(id: string): Promise<void> {
 
 export async function carryForward(taskIds: string[]): Promise<void> {
   if (taskIds.length === 0) return
+  const userId = await currentUserId()
 
   const { data: source, error: e1 } = await supabase
     .from('tasks')
@@ -124,6 +133,7 @@ export async function carryForward(taskIds: string[]): Promise<void> {
     text: t.text,
     priority: 0,
     carried_from: t.date,
+    user_id: userId,
   }))
 
   const { error: e2 } = await supabase.from('tasks').insert(newRows)
@@ -131,6 +141,8 @@ export async function carryForward(taskIds: string[]): Promise<void> {
 }
 
 export async function pullToToday(taskId: string): Promise<Task> {
+  const userId = await currentUserId()
+
   const { data: source, error: e1 } = await supabase
     .from('tasks')
     .select('*')
@@ -146,6 +158,7 @@ export async function pullToToday(taskId: string): Promise<Task> {
       text: s.text,
       priority: 0,
       carried_from: s.date,
+      user_id: userId,
     })
     .select()
     .single()
