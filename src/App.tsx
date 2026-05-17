@@ -34,6 +34,7 @@ export default function App() {
 
 function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAuth>['user']>; signOut: () => Promise<void> }) {
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
+  const [avatarFailed, setAvatarFailed] = useState(false)
   const avatarRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -50,6 +51,7 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
   const {
     selectedDate, setSelectedDate,
     carryForwardVisible, showCarryForward, hideCarryForward,
+    isSidebarOpen, openSidebar, closeSidebar,
   } = useUIStore()
 
   const [newText, setNewText]         = useState('')
@@ -174,8 +176,17 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
   return (
     <div className="app-shell notebook-grid">
       <header className="app-header">
+        {/* Hamburger — mobile only */}
+        <button className="hamburger-btn" onClick={isSidebarOpen ? closeSidebar : openSidebar} aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="2" y1="5" x2="18" y2="5" />
+            <line x1="2" y1="10" x2="18" y2="10" />
+            <line x1="2" y1="15" x2="18" y2="15" />
+          </svg>
+        </button>
+
         <span className="heading-serif" style={{ fontSize: 22 }}>Notebook</span>
-        <span style={{ color: 'var(--ink-faint)', fontFamily: 'var(--font-serif)', fontSize: 14 }}>
+        <span className="header-subtitle" style={{ color: 'var(--ink-faint)', fontFamily: 'var(--font-serif)', fontSize: 14 }}>
           daily tasks
         </span>
         <div className="header-progress">
@@ -198,11 +209,13 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, borderRadius: '50%' }}
             aria-label="Account menu"
           >
-            {user.user_metadata.avatar_url ? (
+            {user.user_metadata.avatar_url && !avatarFailed ? (
               <img
                 src={user.user_metadata.avatar_url}
                 alt={user.user_metadata.full_name ?? 'User'}
-                style={{ width: 32, height: 32, borderRadius: '50%', display: 'block' }}
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarFailed(true)}
+                style={{ width: 32, height: 32, borderRadius: '50%', display: 'block', objectFit: 'cover' }}
               />
             ) : (
               <div style={{
@@ -211,7 +224,7 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: 'var(--font-serif)', fontSize: 14,
               }}>
-                {(user.user_metadata.full_name ?? user.email ?? '?')[0].toUpperCase()}
+                {((user.user_metadata.full_name as string | undefined) ?? user.email ?? '?')[0].toUpperCase()}
               </div>
             )}
           </button>
@@ -246,7 +259,9 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
       </header>
 
       <div className="app-body">
-        <aside className="sidebar">
+        {isSidebarOpen && <div className="sidebar-backdrop" onClick={closeSidebar} />}
+
+        <aside className={`sidebar${isSidebarOpen ? ' sidebar--open' : ''}`}>
           <p className="sidebar-month">{format(parseISO(todayDate), 'MMM yyyy')}</p>
           {(feedData ?? []).map(item => {
             const label   = format(parseISO(item.date), 'EEE d')
@@ -255,7 +270,7 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
               <button
                 key={item.date}
                 className={`sidebar-day${selectedDate === item.date ? ' active' : ''}`}
-                onClick={() => setSelectedDate(item.date)}
+                onClick={() => { setSelectedDate(item.date); closeSidebar() }}
               >
                 <span>{label}</span>
                 {item.taskCount > 0 && (
@@ -269,10 +284,12 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
         </aside>
 
         <main className="page-area">
-          <p className="page-date">{format(parseISO(selectedDate), 'EEEE · MMM d')}</p>
-          <h1 className="heading-serif page-title">
-            {isToday ? 'Today' : format(parseISO(selectedDate), 'EEEE')}
-          </h1>
+          <div className="page-heading-area">
+            <p className="page-date">{format(parseISO(selectedDate), 'EEEE · MMM d')}</p>
+            <h1 className="heading-serif page-title">
+              {isToday ? 'Today' : format(parseISO(selectedDate), 'EEEE')}
+            </h1>
+          </div>
 
           {!isToday && <p className="readonly-notice">Past day — read only</p>}
 
