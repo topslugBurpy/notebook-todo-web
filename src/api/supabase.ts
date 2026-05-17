@@ -18,6 +18,7 @@ export type Task = {
   carried_from: string | null
   completed_at: string | null
   created_at: string
+  user_id: string
 }
 
 export type DaySummary = {

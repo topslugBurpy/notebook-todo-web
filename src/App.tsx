@@ -15,6 +15,8 @@ import {
   useCarryForwardMutation,
 } from './hooks/queries'
 import CarryForwardModal from './components/CarryForwardModal'
+import { LoginScreen } from './components/LoginScreen'
+import { useAuth } from './auth/AuthProvider'
 import type { Task } from './api/supabase'
 import { shouldPromptCarryForward, dismissCarryPrompt } from './utils/carryPrompt'
 
@@ -22,6 +24,29 @@ const PRIORITY_LABEL: Record<number, string> = { 1: '①', 2: '②', 3: '③' }
 const PRIORITY_CLASS: Record<number, string>  = { 1: 'p1', 2: 'p2', 3: 'p3' }
 
 export default function App() {
+  const { user, loading: authLoading, signOut } = useAuth()
+
+  if (authLoading) return <div className="notebook-grid" style={{ minHeight: '100vh' }} />
+  if (!user) return <LoginScreen />
+
+  return <AppShell user={user} signOut={signOut} />
+}
+
+function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAuth>['user']>; signOut: () => Promise<void> }) {
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
+  const avatarRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!avatarMenuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+        setAvatarMenuOpen(false)
+      }
+    }
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [avatarMenuOpen])
+
   const {
     selectedDate, setSelectedDate,
     carryForwardVisible, showCarryForward, hideCarryForward,
@@ -165,6 +190,59 @@ export default function App() {
             ↩ carry forward
           </button>
         )}
+
+        <div style={{ marginLeft: 'auto', position: 'relative' }}>
+          <button
+            ref={avatarRef}
+            onClick={e => { e.stopPropagation(); setAvatarMenuOpen(o => !o) }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, borderRadius: '50%' }}
+            aria-label="Account menu"
+          >
+            {user.user_metadata.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt={user.user_metadata.full_name ?? 'User'}
+                style={{ width: 32, height: 32, borderRadius: '50%', display: 'block' }}
+              />
+            ) : (
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'var(--ink)', color: 'var(--paper)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-serif)', fontSize: 14,
+              }}>
+                {(user.user_metadata.full_name ?? user.email ?? '?')[0].toUpperCase()}
+              </div>
+            )}
+          </button>
+
+          {avatarMenuOpen && (
+            <div onClick={e => e.stopPropagation()} style={{
+              position: 'absolute', right: 0, top: 40, zIndex: 100,
+              background: 'var(--paper)', border: '1px solid rgba(0,0,0,0.1)',
+              borderRadius: 4, padding: '12px 16px', minWidth: 180,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            }}>
+              <p style={{ margin: '0 0 2px', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--ink)', fontWeight: 600 }}>
+                {user.user_metadata.full_name ?? 'User'}
+              </p>
+              <p style={{ margin: '0 0 12px', fontFamily: 'var(--font-serif)', fontSize: 12, color: 'var(--ink-faint)' }}>
+                {user.email}
+              </p>
+              <button
+                onClick={signOut}
+                style={{
+                  background: 'none', border: '1px solid rgba(0,0,0,0.15)',
+                  borderRadius: 3, padding: '5px 10px', cursor: 'pointer',
+                  fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--ink)',
+                  width: '100%',
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="app-body">
