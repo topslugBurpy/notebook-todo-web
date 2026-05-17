@@ -177,12 +177,23 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
     <div className="app-shell notebook-grid">
       <header className="app-header">
         {/* Hamburger — mobile only */}
-        <button className="hamburger-btn" onClick={isSidebarOpen ? closeSidebar : openSidebar} aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="2" y1="5" x2="18" y2="5" />
-            <line x1="2" y1="10" x2="18" y2="10" />
-            <line x1="2" y1="15" x2="18" y2="15" />
-          </svg>
+        <button
+          className="hamburger-btn"
+          onClick={(e) => { e.stopPropagation(); isSidebarOpen ? closeSidebar() : openSidebar() }}
+          aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
+        >
+          {isSidebarOpen ? (
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="4" y1="4" x2="16" y2="16" />
+              <line x1="16" y1="4" x2="4" y2="16" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="2" y1="5" x2="18" y2="5" />
+              <line x1="2" y1="10" x2="18" y2="10" />
+              <line x1="2" y1="15" x2="18" y2="15" />
+            </svg>
+          )}
         </button>
 
         <span className="heading-serif" style={{ fontSize: 22 }}>Notebook</span>
