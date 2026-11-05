@@ -301,6 +301,79 @@
 .modal-btn-primary:hover { opacity: 0.85; }
 .modal-btn-primary:disabled { opacity: 0.4; cursor: default; }
 
+/* ── Brand — returns to today ── */
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 2px;
+}
+
+.brand-name {
+  position: relative;
+  font-size: 22px;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+/* Pen stroke drawn under the name on hover */
+.brand-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--margin-line);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
+}
+
+.brand-subtitle {
+  color: var(--ink-faint);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.brand:hover .brand-name,
+.brand:focus-visible .brand-name { transform: rotate(-1.5deg); }
+
+.brand:hover .brand-name::after,
+.brand:focus-visible .brand-name::after { transform: scaleX(1); }
+
+.brand:hover .brand-subtitle,
+.brand:focus-visible .brand-subtitle {
+  color: var(--ink-light);
+  transform: translateX(2px);
+}
+
+.brand:active .brand-name { transform: rotate(-1.5deg) scale(0.97); }
+
+.brand:focus-visible {
+  outline: 2px solid var(--margin-line);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-name,
+  .brand-name::after,
+  .brand-subtitle { transition: none; }
+
+  .brand:hover .brand-name,
+  .brand:focus-visible .brand-name,
+  .brand:active .brand-name,
+  .brand:hover .brand-subtitle,
+  .brand:focus-visible .brand-subtitle { transform: none; }
+}
+
 /* ── Hamburger — hidden on desktop ── */
 .hamburger-btn {
   display: none;

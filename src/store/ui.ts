@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { format } from 'date-fns'
+import { localDateStr } from '../utils/date'
 
 interface UIState {
   selectedDate: string        // ISO "YYYY-MM-DD"
@@ -13,7 +13,7 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  selectedDate: format(new Date(), 'yyyy-MM-dd'),
+  selectedDate: localDateStr(),
   setSelectedDate: (date) => set({ selectedDate: date }),
   carryForwardVisible: false,
   showCarryForward: () => set({ carryForwardVisible: true }),

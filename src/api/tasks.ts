@@ -1,7 +1,9 @@
 import { supabase } from './supabase'
 import type { Task, DaySummary } from './supabase'
+import { localDateStr, daysAgoStr } from '../utils/date'
+import { withoutDuplicates } from '../utils/carryPrompt'
 
-const todayStr = () => new Date().toISOString().slice(0, 10)
+const todayStr = () => localDateStr()
 
 async function currentUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser()
@@ -40,7 +42,7 @@ export async function getTasksByDate(date: string): Promise<Task[]> {
 }
 
 export async function getYesterdayUnfinished(): Promise<Task[]> {
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  const yesterday = daysAgoStr(1)
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
@@ -51,7 +53,7 @@ export async function getYesterdayUnfinished(): Promise<Task[]> {
 }
 
 export async function getSidebarDays(): Promise<DaySummary[]> {
-  const since = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
+  const since = daysAgoStr(7)
   const { data, error } = await supabase
     .from('tasks')
     .select('date, done')
@@ -128,7 +130,13 @@ export async function carryForward(taskIds: string[]): Promise<void> {
     .in('id', taskIds)
   if (e1) throw e1
 
-  const newRows = (source as Task[]).map(t => ({
+  const { data: existing, error: e3 } = await supabase
+    .from('tasks')
+    .select('text')
+    .eq('date', todayStr())
+  if (e3) throw e3
+
+  const newRows = withoutDuplicates(source as Task[], existing ?? []).map(t => ({
     date: todayStr(),
     text: t.text,
     priority: 0,
@@ -136,8 +144,11 @@ export async function carryForward(taskIds: string[]): Promise<void> {
     user_id: userId,
   }))
 
+  if (newRows.length === 0) return
+
   const { error: e2 } = await supabase.from('tasks').insert(newRows)
-  if (e2) throw e2
+  // 23505: another tab carried the same task first, so it is already on today's list
+  if (e2 && e2.code !== '23505') throw e2
 }
 
 export async function pullToToday(taskId: string): Promise<Task> {

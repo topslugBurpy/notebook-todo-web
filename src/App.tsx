@@ -18,7 +18,8 @@ import CarryForwardModal from './components/CarryForwardModal'
 import { LoginScreen } from './components/LoginScreen'
 import { useAuth } from './auth/AuthProvider'
 import type { Task } from './api/supabase'
-import { shouldPromptCarryForward, dismissCarryPrompt } from './utils/carryPrompt'
+import { shouldPromptCarryForward, dismissCarryPrompt, withoutDuplicates } from './utils/carryPrompt'
+import { localDateStr } from './utils/date'
 
 const PRIORITY_LABEL: Record<number, string> = { 1: '①', 2: '②', 3: '③' }
 const PRIORITY_CLASS: Record<number, string>  = { 1: 'p1', 2: 'p2', 3: 'p3' }
@@ -63,7 +64,7 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
   const addInputRef  = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
 
-  const todayDate = format(new Date(), 'yyyy-MM-dd')
+  const todayDate = localDateStr()
   const isToday   = selectedDate === todayDate
 
   const { data: todayData, isLoading, isError } = useTodayQuery()
@@ -78,6 +79,8 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
   const carryForwardMutation = useCarryForwardMutation()
 
   const tasks: Task[] = isToday ? (todayData ?? []) : (pastDayData ?? [])
+  const carryableTasks = todayData ? withoutDuplicates(yesterdayUnfinished ?? [], todayData) : []
+  const hasCarryableTasks = carryableTasks.length > 0
 
   const done  = tasks.filter(t => t.done).length
   const total = tasks.length
@@ -87,10 +90,10 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
   useEffect(() => { if (editingId !== null) editInputRef.current?.focus() }, [editingId])
 
   useEffect(() => {
-    if ((yesterdayUnfinished ?? []).length > 0 && shouldPromptCarryForward(todayDate)) {
+    if (hasCarryableTasks && shouldPromptCarryForward(todayDate)) {
       showCarryForward()
     }
-  }, [yesterdayUnfinished, todayDate, showCarryForward])
+  }, [hasCarryableTasks, todayDate, showCarryForward])
 
   useEffect(() => {
     if (priorityPopover === null) return
@@ -196,10 +199,17 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
           )}
         </button>
 
-        <span className="heading-serif" style={{ fontSize: 22 }}>Notebook</span>
-        <span className="header-subtitle" style={{ color: 'var(--ink-faint)', fontFamily: 'var(--font-serif)', fontSize: 14 }}>
-          daily tasks
-        </span>
+        <button
+          className="brand"
+          onClick={() => { setSelectedDate(todayDate); closeSidebar() }}
+          aria-label="Notebook, go to today"
+          title="Go to today"
+        >
+          <span className="heading-serif brand-name">Notebook</span>
+          <span className="header-subtitle brand-subtitle">
+            {isToday ? 'daily tasks' : '← back to today'}
+          </span>
+        </button>
         <div className="header-progress">
           <span className="progress-label">{done}/{total}</span>
           <div className="progress-track">
@@ -207,7 +217,7 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
           </div>
           <span className="progress-pct">{pct}%</span>
         </div>
-        {(yesterdayUnfinished ?? []).length > 0 && (
+        {hasCarryableTasks && (
           <button className="cf-demo-btn" onClick={showCarryForward} title="Carry forward from yesterday">
             ↩ carry forward
           </button>
@@ -428,7 +438,7 @@ function AppShell({ user, signOut }: { user: NonNullable<ReturnType<typeof useAu
 
       {carryForwardVisible && (
         <CarryForwardModal
-          tasks={yesterdayUnfinished ?? []}
+          tasks={carryableTasks}
           onConfirm={handleCarryForwardConfirm}
           onDismiss={handleCarryForwardDismiss}
           isPending={carryForwardMutation.isPending}
