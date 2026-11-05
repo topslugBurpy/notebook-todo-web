@@ -7,6 +7,9 @@ interface UIState {
   carryForwardVisible: boolean
   showCarryForward: () => void
   hideCarryForward: () => void
+  isSidebarOpen: boolean
+  openSidebar: () => void
+  closeSidebar: () => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -15,4 +18,7 @@ export const useUIStore = create<UIState>((set) => ({
   carryForwardVisible: false,
   showCarryForward: () => set({ carryForwardVisible: true }),
   hideCarryForward: () => set({ carryForwardVisible: false }),
+  isSidebarOpen: false,
+  openSidebar: () => set({ isSidebarOpen: true }),
+  closeSidebar: () => set({ isSidebarOpen: false }),
 }))
